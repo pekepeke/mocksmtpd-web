@@ -1,0 +1,3 @@
+[submodule "mocksmtpd"]
+	path = mocksmtpd
+	url = git://github.com/boomerang/mocksmtpd.git
