@@ -80,12 +80,14 @@ install() {
   echo "*** Register application to pow..."
   [ ! -e ~/.pow/mocksmtpd ] && ln -s $PWD/web ~/.pow/mocksmtpd
 
+  echo ""
+  echo ""
   echo "Installation is complete."
 }
 
 uninstall() {
 
-  echo "Unregister ipfw rule(required root privilege)"
+  echo "*** Unregister ipfw rule(required root privilege)"
   DAEMON_FILE="/Library/LaunchDaemons/$DAEMON_PLIST"
   sudo launchctl unload "$DAEMON_FILE"
   sudo rm "$DAEMON_FILE"
@@ -98,7 +100,9 @@ uninstall() {
   echo "*** Unregister application..."
   [ -e ~/.pow/mocksmtpd ] && rm ~/.pow/mocksmtpd
 
-  echo "*** Uninstallation is complete."
+  echo ""
+  echo ""
+  echo "Uninstallation is complete."
 }
 
 main() {

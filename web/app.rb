@@ -7,7 +7,7 @@
 # Bundler.setup
 require 'sinatra'
 require 'erubis'
-require "sinatra/reloader" if development?
+# require "sinatra/reloader" if development?
 
 set :erubis, :escape_html => true
 # enable :sessions, :logging

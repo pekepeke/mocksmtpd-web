@@ -6,7 +6,7 @@ gem 'sinatra'
 gem 'erubis'
 gem 'thin'
 
-group :development do
-  gem 'sinatra-reloader'
-end
+# group :development do
+#   gem 'sinatra-reloader'
+# end
 
