@@ -37,16 +37,23 @@ after do
   #
 end
 
+class Sinatra::Request
+  def pjax?
+    env['HTTP_X_PJAX'] || self["_pjax"]
+  end
+end
+
 get '/' do
   fpath = File.join(settings.inbox_folder, 'index.html')
   if File.exists? fpath
     @body = File.read(fpath).gsub(/href="(.*)\.html"/, 'href="/inbox/\1"')
 
-    @body = @body[@body.index("<table>")..@body.rindex("</table>")] + "/table>"
+    @body = @body[@body.index("<table>")..@body.rindex("</table>")]
+      .gsub(/<table>/, '<table class="table table-hover">') + "/table>"
   else
     @body = '<p class="lead text-warning">You have not received email yet...</p>'
   end
-  erb :index
+  erb :index, :layout => !request.pjax?
 end
 
 get '/inbox' do
@@ -61,10 +68,10 @@ get '/inbox/:id' do
 
     @body = @body[@body.index("<h1")..@body.rindex("</div>")] + "/div>"
     @nav = "inbox/#{params[:id]}"
-    erb :inbox
+    erb :inbox, :layout => !request.pjax?
   else
     @body = '<p class="lead text-error">mail not found</p>'
-    erb :inbox
+    erb :inbox, :layout => !request.pjax?
   end
 end
 
@@ -104,6 +111,7 @@ __END__
     <link href="/css/bootstrap-responsive.min.css" rel="stylesheet">
 
     <script src="/js/jquery-1.9.0.min.js"></script>
+    <script src="/js/jquery.pjax.js"></script>
     <script src="/js/bootstrap.min.js"></script>
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
@@ -114,8 +122,13 @@ __END__
     <script>//<![[CDATA[
       !function($, Global) {
         $(function() {
-          $('table')
-            .addClass('table table-hover');
+          $(document).pjax('a', '.pjax-container')
+          // navbar collapse
+          $('.navbar-inner a').on('click', function() {
+            if (!$(this).data('target')) {
+              $($('a[data-toggle="collapse"]').data('target')).collapse('hide')
+            }
+          });
         })
       }(jQuery, this);
 //]]></script>
@@ -156,7 +169,7 @@ __END__
       </div>
     </div>
 
-    <div class="container">
+    <div class="container pjax-container">
 
       <%= yield.trust %>
 
