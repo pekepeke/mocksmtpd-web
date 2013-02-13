@@ -125,8 +125,12 @@ __END__
           $(document).pjax('a', '.pjax-container')
           // navbar collapse
           $('.navbar-inner a').on('click', function() {
-            if (!$(this).data('target')) {
-              $($('a[data-toggle="collapse"]').data('target')).collapse('hide')
+            if (!$(this).data('target') && !$(this).data('toggle')) {
+              var $link = $('a[data-toggle="collapse"]')
+                , $target = $($link.data('target'));
+              if ($target.hasClass('in')) {
+                $link.trigger('click');
+              }
             }
           });
         })
