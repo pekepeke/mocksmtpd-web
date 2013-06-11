@@ -41,6 +41,9 @@ class Sinatra::Request
   def pjax?
     env['HTTP_X_PJAX'] || self["_pjax"]
   end
+  def ajax?
+    env['HTTP_X_REQUESTED_WITH'] == "XMLHttpRequest"
+  end
 end
 
 get '/' do
@@ -53,7 +56,7 @@ get '/' do
   else
     @body = '<p class="lead text-warning">You have not received email yet...</p>'
   end
-  erb :index, :layout => !request.pjax?
+  erb :index, :layout => !(request.pjax? || request.ajax?)
 end
 
 get '/inbox' do
@@ -71,7 +74,7 @@ get '/inbox/:id' do
     erb :inbox, :layout => !request.pjax?
   else
     @body = '<p class="lead text-error">mail not found</p>'
-    erb :inbox, :layout => !request.pjax?
+    erb :inbox, :layout => !(request.pjax? || request.ajax?)
   end
 end
 
@@ -137,12 +140,24 @@ __END__
             w['r'+r] = w['r'+r] || w['webkitR'+r] || w['mozR'+r] || w['msR'+r] || w['oR'+r] || function(f){ w.setTimeout(f, 1000 / 60); };
             w['c'+c] = w['c'+c] || w['webkitC'+c] || w['mozC'+c] || w['msC'+c] || w['oC'+c] || function(t){ w.clearTimeout(t); };
           })(window, 'equestAnimationFrame', 'ancelRequestAnimationFrame');
-          var timer_id = null;
+          var timer_id = null
+            , latest_path = null
+            , latest_selector = '.nav li:first a';
+          function get_latest_path() {
+            return $('.table td a:first').attr('href');
+          }
           setInterval(function() {
             if (location.pathname == "/") {
               cancelRequestAnimationFrame(timer_id);
+              latest_path = get_latest_path();
               timer_id = requestAnimationFrame(function() {
-                $('.nav li:first a').trigger('click');
+                $.get("?" + new Date().getTime()).done(function(html) {
+                  $('.pjax-container').html(html);
+                  var received_latest_path = get_latest_path();
+                  if (latest_path != received_latest_path) {
+                    window.scrollTo(0, 0);
+                  }
+                });
                 // console.log("reload" + new Date().toString())
               });
             }

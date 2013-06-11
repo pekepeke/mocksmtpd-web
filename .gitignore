@@ -20,4 +20,5 @@ doc/
 log/*.log
 log/*.pid
 web/inbox/*.html
+web/vendor
 
