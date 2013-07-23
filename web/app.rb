@@ -49,7 +49,13 @@ end
 get '/' do
   fpath = File.join(settings.inbox_folder, 'index.html')
   if File.exists? fpath
-    @body = File.read(fpath).gsub(/href="(.*)\.html"/, 'href="/inbox/\1"')
+    @body = File.read(fpath)
+      .encode("utf-16be", "utf-8", {
+              :invalid => :replace,
+              :undef => :replace,
+              :replace => '〓'})
+      .encode('utf-8')
+      .gsub(/href="(.*)\.html"/, 'href="/inbox/\1"')
 
     @body = @body[@body.index("<table>")..@body.rindex("</table>")]
       .gsub(/<table>/, '<table class="table table-hover">') + "/table>"
@@ -106,6 +112,7 @@ __END__
     <style>
       body {
         padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+        padding-bottom: 30px;
       }
       .container {
         padding: 0 60px 0 60px;
