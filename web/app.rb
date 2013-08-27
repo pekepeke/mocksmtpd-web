@@ -57,8 +57,12 @@ get '/' do
       .encode('utf-8')
       .gsub(/href="(.*)\.html"/, 'href="/inbox/\1"')
 
-    @body = @body[@body.index("<table>")..@body.rindex("</table>")]
-      .gsub(/<table>/, '<table class="table table-hover">') + "/table>"
+    begin
+      @body = @body[@body.index("<table>")..@body.rindex("</table>")]
+        .gsub(/<table>/, '<table class="table table-hover">') + "/table>"
+    rescue ArgumentError => e
+      puts e
+    end
   else
     @body = '<p class="lead text-warning">You have not received email yet...</p>'
   end
@@ -75,7 +79,11 @@ get '/inbox/:id' do
   if File.exists? fpath
     @body = File.read(fpath).gsub(/href="(.*)\.html"/, 'href="/inbox/\1"')
 
+    begin
     @body = @body[@body.index("<h1")..@body.rindex("</div>")] + "/div>"
+    rescue ArgumentError => e
+      puts e
+    end
     @nav = "inbox/#{params[:id]}"
     erb :inbox, :layout => !request.pjax?
   else
