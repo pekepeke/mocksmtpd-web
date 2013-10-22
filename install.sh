@@ -49,23 +49,22 @@ mocksmtpd_plist() {
 </plist>
 EOM
   return 0
-
 }
 
-install() {
-  if [ "$(uname -s)" != "Darwin" ]; then
-    echo "Sorry, requires Mac OS X to run." >&2
-    exit 1
-  fi
-  if [ ! -e ~/.pow ]; then
-    echo "Sorry, required pow to run." >&2
-    exit 1
-  fi
+install_repository() {
   if [ ! -e ~/.mocksmtpd-web ]; then
     git clone https://github.com/pekepeke/mocksmtpd-web.git ~/.mocksmtpd-web
     cd ~/.mocksmtpd-web
     git submodule update --init
   fi
+}
+
+install_osx() {
+  if [ ! -e ~/.pow ]; then
+    echo "Sorry, required pow to run." >&2
+    exit 1
+  fi
+  install_repository
 
   # install with root privilege
   echo "*** Register ipfw rule... (required root privilege)"
@@ -79,14 +78,9 @@ install() {
 
   echo "*** Register application to pow..."
   [ ! -e ~/.pow/mocksmtpd ] && ln -s $PWD/web ~/.pow/mocksmtpd
-
-  echo ""
-  echo ""
-  echo "Installation is complete."
 }
 
-uninstall() {
-
+uninstall_osx() {
   echo "*** Unregister ipfw rule(required root privilege)"
   DAEMON_FILE="/Library/LaunchDaemons/$DAEMON_PLIST"
   sudo launchctl unload "$DAEMON_FILE"
@@ -99,6 +93,24 @@ uninstall() {
 
   echo "*** Unregister application..."
   [ -e ~/.pow/mocksmtpd ] && rm ~/.pow/mocksmtpd
+}
+
+install() {
+  local shortuname=$(uname -s)
+  if [ "${shortuname}" != "Darwin" ]; then
+    echo "Sorry, requires Mac OS X to run." >&2
+    exit 1
+  fi
+
+  install_osx
+
+  echo ""
+  echo ""
+  echo "Installation is complete."
+}
+
+uninstall() {
+  uninstall_osx
 
   echo ""
   echo ""
