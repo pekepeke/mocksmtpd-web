@@ -16,5 +16,6 @@ if [ -e log/mocksmtpd.pid ]; then
   [ $running_found -eq 0 ] && rm log/mocksmtpd.pid
 fi
 
+export LANG=UTF-8
 exec $MOCKSMTPD_BIN -f conf/mocksmtpd.conf
 
