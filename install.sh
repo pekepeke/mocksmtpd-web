@@ -73,6 +73,8 @@ install_repository() {
     git clone https://github.com/pekepeke/mocksmtpd-web.git ~/.mocksmtpd-web
     cd ~/.mocksmtpd-web
     git submodule update --init
+    cd ~/.mocksmtpd-web/web/
+    bundle install
   fi
 }
 
