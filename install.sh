@@ -51,6 +51,23 @@ EOM
   return 0
 }
 
+mocksmtpd_upstart() {
+  LABEL=$1
+  BIN=$2
+  cat <<EOM
+description "$LABEL"
+author  "pekepeke <pekepekesamurai+github@gmail.com>"
+
+start on runlevel [2345]
+stop on runlevel [016]
+
+chdir /tmp
+exec $BIN
+respawn
+EOM
+  return 0
+}
+
 install_repository() {
   if [ ! -e ~/.mocksmtpd-web ]; then
     git clone https://github.com/pekepeke/mocksmtpd-web.git ~/.mocksmtpd-web
@@ -95,14 +112,65 @@ uninstall_osx() {
   [ -e ~/.pow/mocksmtpd ] && rm ~/.pow/mocksmtpd
 }
 
-install() {
-  local shortuname=$(uname -s)
-  if [ "${shortuname}" != "Darwin" ]; then
-    echo "Sorry, requires Mac OS X to run." >&2
+install_linux() {
+  if [ ! -e ~/.prax ]; then
+    echo "Sorry, required prax to run." >&2
     exit 1
   fi
+  install_repository
 
-  install_osx
+  echo "*** Register daemons..."
+  LABEL=$(basename $AGENT_PLIST .plist)
+  mocksmtpd_upstart "$LABEL" "$PWD/bin/mocksmtpd.sh" | sudo tee /etc/init/${LABEL}.conf
+  sudo initctl reload-configuration
+  # launchctl load -Fw  "$HOME/Library/LaunchAgents/$AGENT_PLIST"
+
+  echo "*** Register application to prax..."
+  [ ! -e ~/.prax/mocksmtpd ] && ln -s $PWD/web ~/.prax/mocksmtpd
+
+  echo "*** Please add ufw rule"
+  echo "echo -A PREROUTING -p tcp --dport 25 -j REDIRECT --to-port 60025 >>  /etc/ufw/before.rules"
+  # iptables -t nat -A POSTROUTING -m tcp -p tcp --dst 127.0.0.1 --dport 25 -j SNAT --to-source 127.0.0.1 --to-destination 127.0.0.1:60025
+
+}
+
+uninstall_linux() {
+  echo "*** Unregister daemons..."
+  # launchctl unload "$HOME/Library/LaunchAgents/$AGENT_PLIST"
+  # rm               "$HOME/Library/LaunchAgents/$AGENT_PLIST"
+  LABEL=$(basename $AGENT_PLIST .plist)
+  sudo rm /etc/init/${LABEL}.conf
+  sudo initctl reload-configuration
+
+
+  echo "*** Unregister application..."
+  [ -e ~/.prax/mocksmtpd ] && rm ~/.prax/mocksmtpd
+
+  echo "*** Please remove ufw rule - /etc/ufw/before.rules"
+  echo "echo -A PREROUTING -p tcp --dport 25 -j REDIRECT --to-port 60025"
+}
+
+is_osx() {
+  local shortuname=$(uname -s)
+  [ "${shortuname}" != "Darwin" ] && return 1
+  return 0
+}
+
+is_linux() {
+  local shortuname=$(uname -s)
+  [ "${shortuname}" != "Linux" ] && return 1
+  return 0
+}
+
+install() {
+  if is_osx; then
+    install_osx
+  elif is_linux; then
+    insall_linux
+  else
+    echo "Sorry, requires Mac OS X or Linux to run." >&2
+    exit 1
+  fi
 
   echo ""
   echo ""
@@ -110,7 +178,14 @@ install() {
 }
 
 uninstall() {
-  uninstall_osx
+  if is_osx; then
+    uninstall_osx
+  elif is_linux; then
+    uninstall_linux
+  else
+    echo "Sorry, requires Mac OS X or Linux to run." >&2
+    exit 1
+  fi
 
   echo ""
   echo ""
