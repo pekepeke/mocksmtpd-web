@@ -128,10 +128,14 @@ install_linux() {
   echo "*** Register application to prax..."
   [ ! -e ~/.prax/mocksmtpd ] && ln -s $PWD/web ~/.prax/mocksmtpd
 
-  echo "*** Please add ufw rule"
-  echo "echo -A PREROUTING -p tcp --dport 25 -j REDIRECT --to-port 60025 >>  /etc/ufw/before.rules"
-  # iptables -t nat -A POSTROUTING -m tcp -p tcp --dst 127.0.0.1 --dport 25 -j SNAT --to-source 127.0.0.1 --to-destination 127.0.0.1:60025
+  echo "*** Please add ufw rule - /etc/ufw/before.rules"
+  cat <<EOM
+  iptables -t nat -A OUTPUT -p tcp -d 127.0.0.1 --dport 25  -j REDIRECT --to-ports 60025
 
+  sudo iptables-save | sudo tee /etc/ufw/before.rules
+EOM
+  # echo "echo -A PREROUTING -p tcp -i eth0 --dport 25 -j REDIRECT --to-port 60025 | sudo tee /etc/ufw/before.rules"
+  # iptables -t nat -A POSTROUTING -m tcp -p tcp --dst 127.0.0.1 --dport 25 -j SNAT --to-source 127.0.0.1 --to-destination 127.0.0.1:60025
 }
 
 uninstall_linux() {
@@ -146,8 +150,8 @@ uninstall_linux() {
   echo "*** Unregister application..."
   [ -e ~/.prax/mocksmtpd ] && rm ~/.prax/mocksmtpd
 
-  echo "*** Please remove ufw rule - /etc/ufw/before.rules"
-  echo "echo -A PREROUTING -p tcp --dport 25 -j REDIRECT --to-port 60025"
+  echo "*** Please remove line from ufw rule - /etc/ufw/before.rules"
+  echo "-A PREROUTING -p tcp --dport 25 -j REDIRECT --to-port 60025"
 }
 
 is_osx() {
@@ -166,7 +170,7 @@ install() {
   if is_osx; then
     install_osx
   elif is_linux; then
-    insall_linux
+    install_linux
   else
     echo "Sorry, requires Mac OS X or Linux to run." >&2
     exit 1
